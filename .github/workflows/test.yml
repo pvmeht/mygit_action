@@ -3,7 +3,7 @@ name: Commit Log and Tag Author
 on:
   push:
     branches:
-      - rutick  # Trigger on push to the 'rutick' branch.
+      - main  # Trigger on push to the 'rutick' branch.
 
 jobs:
   generate-log-and-tag-author:
