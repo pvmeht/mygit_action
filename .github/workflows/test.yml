@@ -1,9 +1,9 @@
-name: Commit Log and Tagging Author
+name: Commit Log and Tag Author
 
 on:
   push:
     branches:
-      - main  # Trigger on push to the 'rutick' branch.
+      - rutick  # Trigger on push to the 'rutick' branch.
 
 jobs:
   generate-log-and-tag-author:
@@ -17,13 +17,17 @@ jobs:
       - name: Generate Commit Description and Log
         run: |
           echo "Generating commit description and log..."
-          COMMIT_MESSAGE=$(git log -1 --pretty=format:%s)
-          AUTHOR_NAME=$(git log -1 --pretty=format:'%an')  # Get the author of the commit.
-          AUTHOR_GITHUB=$(git log -1 --pretty=format:'%ae')  # Get the author's GitHub email.
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
+          COMMIT_HASH=$(git log -1 --pretty=format:"%H")
+          AUTHOR_NAME=$(git log -1 --pretty=format:"%an")  # Get the author of the commit.
+          AUTHOR_GITHUB=$(git log -1 --pretty=format:"%ae")  # Get the author's GitHub email.
 
           echo "Commit Message: $COMMIT_MESSAGE"
+          echo "Commit Hash: $COMMIT_HASH"
           echo "Commit by: $AUTHOR_NAME <$AUTHOR_GITHUB>" > commit-log.txt
-          echo "Commit Description: $COMMIT_MESSAGE" >> commit-log.txt
+          echo "**Commit Message:** $COMMIT_MESSAGE" >> commit-log.txt
+          echo "**Commit Hash:** $COMMIT_HASH" >> commit-log.txt
+          echo "**Author:** $AUTHOR_NAME ($AUTHOR_GITHUB)" >> commit-log.txt
           cat commit-log.txt
 
       - name: Upload Commit Log as Artifact
@@ -33,14 +37,17 @@ jobs:
           path: commit-log.txt
 
       - name: Create GitHub Discussion
+        env:
+          GITHUB_TOKEN: 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
         run: |
           echo "Creating a discussion in the General category..."
           curl -X POST \
-            -H "Authorization: token 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" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
             -H "Content-Type: application/json" \
             -d '{
-                  "title": "Commit Log: '$COMMIT_MESSAGE'",
-                  "body": "This commit was made by @'$AUTHOR_NAME'.\n\n**Commit Message:**\n'$COMMIT_MESSAGE'\n\n**Commit Log:**\n'$COMMIT_MESSAGE'\n\n**Author:** @'$AUTHOR_NAME'.",
-                  "category": "general"
+                  "title": "Commit Log: '"$COMMIT_MESSAGE"'",
+                  "body": "**Commit Details:**\n\n- **Commit Hash:** '"$COMMIT_HASH"'\n- **Author:** '"$AUTHOR_NAME"' (<'"$AUTHOR_GITHUB"'>)\n- **Commit Message:** '"$COMMIT_MESSAGE"'\n\nTagging: @'"$AUTHOR_NAME"'",
+                  "category_id": 1
                 }' \
             https://api.github.com/repos/jay86050/mygit_action/discussions
